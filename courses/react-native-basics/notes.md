@@ -51,7 +51,7 @@ Use StyleSheet element which is an object that holds styling. Display flex is de
 
 ### Lists
 
-If you need to render a list of elements, should not use map in react native due to performance issues. Use **FlatList or SectionList**. React Native will render every item on screen and re-render all of them regardless of whether data is changed.
+If you need to render a list of elements, should not use map in react native due to performance issues. Use **FlatList or SectionList**. React Native will render every item on screen and re-render all of them regardless of whether data is changed. Lists have built in scroll. Only use ScrollView if list is not used.
 
 - FlatList - Takes 3 props:
 
@@ -66,3 +66,54 @@ If you need to render a list of elements, should not use map in react native due
   - keyExtractor - function that gets passed an item and it's index
   - renderItem - function passed the item and it's index and will return individual item component
   - renderSectionHeader - function to display title
+
+# Navigation
+
+If using expo use React Navigation over React Native Navigation
+
+### Installing navigation with Expo
+
+Install navigation library
+
+```
+npm install @react-navigation/native
+```
+
+Add all expo-compatible dependencies
+
+```
+expo install react-native-gesture-handler react-native-reanimated react-native-screens react-native-safe-area-context @react-native-community/masked-view
+```
+
+Install stack navigator
+
+```
+npm install @react-navigation/stack
+```
+
+### Adding navigation to app
+
+Two main types of navigation: Bottom and Stack Navigation.
+
+**Important:** All bottom nav pages that you have renders as soon as you open app (be mindful of complex data fetching)
+
+Navigation inside pages is in stacks
+
+- When you navigate from a page on bottom nav it stacks on top of the current page but still stays on same bottom nav
+- if you click a different bottom nav and go back to the previous it will still show the page you navigated to on the specific bottom nav page (does not auto reset page)
+- Anything wrapped in Navigation gets navigation prop which contains various convenience functions (navigate, reset, goBack, addListener, setParams, dispatch, dangerouslyGetParent)
+
+### Touchable Components
+
+- TouchableOpacity - wrapped component has opacity applied when touched
+- TouchableHighlight - wrapped component darkens when touch is in progress
+- TouchableWithoutFeedback - no visual feedback
+- TouchableNativeFeedback - (androids only) adds android-style touch feedback
+
+# Forms
+There are no restraints in having everything in a form element like web app but need to track each part of the form
+
+Different inputs:
+- TextInput (Most Popular)
+- Picker
+- Switch
