@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import './App.css'
+import { kebabCaseToTitleCase } from './helpers'
 
 function App() {
-  const [buttonColor, setButtonColor] = useState('red')
+  const [buttonColor, setButtonColor] = useState('medium-violet-red')
   const [disableButton, setDisableButton] = useState(false)
-  const nextColor = buttonColor === 'red' ? 'blue' : 'red'
+  const nextColor = buttonColor === 'medium-violet-red' ? 'midnight-blue' : 'medium-violet-red'
 
   return (
     <div>
@@ -13,7 +14,7 @@ function App() {
         onClick={() => setButtonColor(nextColor)}
         disabled={disableButton}
       >
-        Change to {nextColor}
+        Change to {kebabCaseToTitleCase(nextColor)}
       </button>
       <br />
       <input

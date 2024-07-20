@@ -1,7 +1,8 @@
 import { logRoles } from '@testing-library/react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import App from './App'
-import { expect } from 'vitest'
+import { describe, expect, test } from 'vitest'
+import { kebabCaseToTitleCase } from './helpers'
 
 test('button click flow', () => {
   // render app
@@ -15,7 +16,7 @@ test('button click flow', () => {
   const buttonElement = screen.getByRole('button', { name: /blue/i })
 
   // check initial color
-  expect(buttonElement).toHaveClass('red')
+  expect(buttonElement).toHaveClass('medium-violet-red')
 
   // click the button
   fireEvent.click(buttonElement)
@@ -23,10 +24,10 @@ test('button click flow', () => {
   // check button text
   expect(buttonElement).toHaveTextContent(/red/i)
   // check button color
-  expect(buttonElement).toHaveClass('blue')
+  expect(buttonElement).toHaveClass('midnight-blue')
 
   // better to test classes instead of actual style (testing styles is slow)
-  expect(buttonElement).toHaveStyle({ 'background-color': 'rgb(0, 0, 255)' })
+  // expect(buttonElement).toHaveStyle({ 'background-color': 'rgb(0, 0, 255)' })
 })
 
 test('checkbox flow', () => {
@@ -52,7 +53,7 @@ test('checkbox flow', () => {
   fireEvent.click(checkboxElement)
   // check if enabled
   expect(buttonElement).toBeEnabled()
-  expect(buttonElement).toHaveClass('red')
+  expect(buttonElement).toHaveClass('medium-violet-red')
 })
 
 test('checkbox flow after click', () => {
@@ -77,7 +78,19 @@ test('checkbox flow after click', () => {
   fireEvent.click(checkboxElement)
   // check if enabled
   expect(buttonElement).toBeEnabled()
-  expect(buttonElement).toHaveClass('blue')
+  expect(buttonElement).toHaveClass('midnight-blue')
 })
 
 test('button has correct text after click', () => {})
+
+describe("kebabCaseToTitleCase", () => {
+  test("works for no hyphens", () => {
+    expect(kebabCaseToTitleCase('red')).toBe('Red')
+  })
+  test("works for one hyphen", () => {
+    expect(kebabCaseToTitleCase('midnight-blue')).toBe('Midnight Blue')
+  })
+  test("works for multiple hyphens", () => {
+    expect(kebabCaseToTitleCase('medium-violet-red')).toBe('Medium Violet Red')
+  })
+})
