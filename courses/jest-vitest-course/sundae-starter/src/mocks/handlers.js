@@ -16,4 +16,17 @@ export const handlers = [
       },
     ])
   }),
+
+  http.get(`${link}/toppings`, () => {
+    return HttpResponse.json([
+      {
+        name: 'M&Ms',
+        imagePath: '/images/m-and-ms.png',
+      },
+      {
+        name: 'Hot fudge',
+        imagePath: '/images/hot-fudge.png',
+      },
+    ])
+  }),
 ]
