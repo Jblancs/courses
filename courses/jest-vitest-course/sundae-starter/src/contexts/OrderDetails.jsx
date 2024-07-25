@@ -40,6 +40,7 @@ export function OrderDetailsProvider(props) {
         const countsArray = Object.values(optionCounts[optionType])
         const totalCount = countsArray.reduce((total, value) => total + value, 0)
         const totalCost = totalCount * pricePerItem[optionType]
+        return totalCost
     }
 
     const totals = {

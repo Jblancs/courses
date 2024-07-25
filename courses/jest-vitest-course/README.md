@@ -99,3 +99,25 @@ Steps to setup
 - create test server
 - make sure test server listens to all tests
 - reset after each set
+
+# When to use asynchronous
+YOU MUST USE AWAIT AND FINDBY
+- server connections are almost always asynchronous
+- use findByRole or findAllByRoles NOT getByRole or getAllByRole
+
+# Adding context to tests for individual tests
+    render(<Component />, { wrapper: ContextProviderComponent })
+
+# Adding context to multiple tests
+- create a test-utils folder and testing-library-utils.jsx file
+- can be used to wrap tests with context or even routers
+
+        import { render } from "@testing-library/react";
+        import { OrderDetailsProvider } from "../contexts/OrderDetails";
+
+        const renderWithContext = (ui, options) => render(ui, {wrapper : OrderDetailsProvider, ...options})
+
+        // re-export everything
+        export * from '@testing-library/react';
+
+        export { renderWithContext as render }

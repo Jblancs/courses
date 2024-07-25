@@ -1,4 +1,4 @@
-import { render, screen, logRoles } from '@testing-library/react'
+import { render, screen } from '../../../test-utils/testing-library-utils'
 import OrderEntry from '../OrderEntry'
 import { expect, test } from 'vitest'
 import { http, HttpResponse } from 'msw'
@@ -16,11 +16,9 @@ test('handles errors for scoops and toppings routes', async () => {
         })
     )
 
-    const {container} = render(<OrderEntry />)
+    render(<OrderEntry />)
 
     const alerts = await screen.findAllByRole('alert')
-
-    logRoles(container)
 
     expect(alerts).toHaveLength(2)
 })
