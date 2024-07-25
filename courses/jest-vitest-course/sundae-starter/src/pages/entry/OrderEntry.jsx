@@ -5,6 +5,7 @@ export default function OrderEntry() {
   <div>
     <Options optionType={'scoops'} />
     <Options optionType={'toppings'} />
+    <h2></h2>
   </div>
   )
 }

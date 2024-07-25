@@ -1,10 +1,10 @@
 import React from 'react'
 import SummaryForm from './SummaryForm'
-import { useOrderDeatils } from '../../contexts/OrderDetails'
+import { useOrderDetails } from '../../contexts/OrderDetails'
 import { formatCurrency } from '../../utilities'
 
 export default function OrderSummary() {
-  const { totals, optionCounts } = useOrderDeatils()
+  const { totals, optionCounts } = useOrderDetails()
 
   const scoopArray = Object.entries(optionCounts.scoops) //[['chocolate', 2], ['vanilla', 1]]
   const scoopList = scoopArray.map(([key, value]) => (

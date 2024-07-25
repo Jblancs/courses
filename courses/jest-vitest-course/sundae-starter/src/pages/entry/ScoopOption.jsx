@@ -1,10 +1,10 @@
 import Col from 'react-bootstrap/Col'
 import Row from 'react-bootstrap/esm/Row'
 import Form from 'react-bootstrap/Form'
-import { useOrderDeatils } from '../../contexts/OrderDetails'
+import { useOrderDetails } from '../../contexts/OrderDetails'
 
 export default function ScoopOption({ name, imagePath }) {
-  const { updateItemCount } = useOrderDeatils()
+  const { updateItemCount } = useOrderDetails()
 
   const handleChange = (e) => {
     updateItemCount(name, parseInt(e.target.value), 'scoops')

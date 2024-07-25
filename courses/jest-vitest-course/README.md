@@ -105,6 +105,21 @@ YOU MUST USE AWAIT AND FINDBY
 - server connections are almost always asynchronous
 - use findByRole or findAllByRoles NOT getByRole or getAllByRole
 
+# Create user to perform action instead of using fireEvent
+    import userEvent from '@testing-library/user-event'
+    const user = userEvent.setup()
+
+In tests include the user which can be used to perform actions such as hover, input, etc
+
+update vailla scoops to 1 and check subtotal
+    const vaillaInput = await screen.findByRole('spinbutton', {
+    name: 'Vanilla',
+    })
+
+    await user.clear(vaillaInput) // good to clear element before changing
+    await user.type(vaillaInput, '1')
+    expect(scoopsSubtotal).toHaveTextContent('2.00')
+
 # Adding context to tests for individual tests
     render(<Component />, { wrapper: ContextProviderComponent })
 

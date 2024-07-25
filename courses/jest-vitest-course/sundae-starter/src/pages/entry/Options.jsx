@@ -6,12 +6,12 @@ import ToppingOption from './ToppingOption'
 import AlertBanner from '../common/AlertBanner'
 import { pricePerItem } from '../../constants'
 import { formatCurrency } from '../../utilities'
-import { useOrderDeatils } from '../../contexts/OrderDetails'
+import { useOrderDetails } from '../../contexts/OrderDetails'
 
 export default function Options({ optionType }) {
   const [items, setItems] = useState([])
   const [error, setError] = useState(false)
-  const {totals} = useOrderDeatils()
+  const {totals} = useOrderDetails()
 
   useEffect(() => {
     axios

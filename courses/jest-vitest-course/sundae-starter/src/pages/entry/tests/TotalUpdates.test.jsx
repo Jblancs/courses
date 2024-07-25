@@ -1,8 +1,7 @@
 import { render, screen } from '../../../test-utils/testing-library-utils'
 import userEvent from '@testing-library/user-event'
-import { expect, test } from 'vitest'
+import { describe, expect, test } from 'vitest'
 import Options from '../Options'
-import { OrderDetailsProvider } from '../../../contexts/OrderDetails'
 
 test('update scoop subtotal when scoops change', async () => {
   const user = userEvent.setup()
@@ -27,4 +26,49 @@ test('update scoop subtotal when scoops change', async () => {
   await user.clear(chocolateInput)
   await user.type(chocolateInput, '2')
   expect(scoopsSubtotal).toHaveTextContent('6.00')
+})
+
+test('update topping subtotal when toppings change', async () => {
+  const user = userEvent.setup()
+  render(<Options optionType='toppings' />)
+
+  const toppingsSubtotal = screen.getByText('Toppings total: $', {exact: false})
+  expect(toppingsSubtotal).toHaveTextContent('0.00')
+
+  // hot fudge interaction
+  const hotFudgeInput = await screen.findByRole('checkbox', {
+    name: 'Hot fudge'
+  })
+  await user.click(hotFudgeInput)
+  expect(toppingsSubtotal).toHaveTextContent('1.50')
+
+  // M&M interaction
+  const mmInput = await screen.findByRole('checkbox', {
+    name: 'M&Ms'
+  })
+  await user.click(mmInput)
+  expect(toppingsSubtotal).toHaveTextContent('3.00')
+
+  await user.click(hotFudgeInput)
+  await user.click(mmInput)
+  expect(toppingsSubtotal).toHaveTextContent('0.00')
+})
+
+describe('grand total', () => {
+  test('grand total starts at $0.00', () => {
+
+  })
+
+  test('grand total updates properly if scoop is added first', () => {
+
+  })
+
+  test('grand total updates properly if topping is added first', () => {
+
+  })
+
+  test('grand total updates properly if item is removed', () => {
+
+  })
+
 })
