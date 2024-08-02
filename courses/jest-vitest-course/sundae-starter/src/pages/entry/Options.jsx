@@ -14,14 +14,20 @@ export default function Options({ optionType }) {
   const {totals} = useOrderDetails()
 
   useEffect(() => {
+    const controller = new AbortController()
     axios
-      .get(`http://localhost:3030/${optionType}`)
+      .get(`http://localhost:3030/${optionType}`, {signal: controller.signal})
       // optionType is scoops or topping (large app would create enum)
       .then((res) => setItems(res.data))
       .catch((error) => {
         // TODO: handle error response
-        setError(true)
+        if (error.name !== 'CanceledError') {
+          setError(true)
+        }
       })
+
+      //abort axios call on component unmount
+      return () => {controller.abort()}
   }, [optionType])
 
   if (error) {

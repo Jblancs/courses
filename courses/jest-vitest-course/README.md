@@ -136,3 +136,40 @@ update vailla scoops to 1 and check subtotal
         export * from '@testing-library/react';
 
         export { renderWithContext as render }
+
+# Handling Warning
+- Warning: An update to Options component inside a test was not wrapped in act(...)
+- Warning: Can't perform React state update on unmounted component
+
+These mean component is changing after test is over
+- test function quits before state updates are complete
+
+Try to isolote which test is causing by using test.only or test.skip
+- Solve by explicitly unmounting before tests end
+- create an abort controller on axios call (in useEffect)
+
+        const controller = new AbortController()
+        axios
+        .get(`http://localhost:3030/${optionType}`, {signal: controller.signal})
+        // optionType is scoops or topping (large app would create enum)
+        .then((res) => setItems(res.data))
+        .catch((error) => {
+            // TODO: handle error response
+            if (error.name !== 'CanceledError') {
+            setError(true)
+            }
+        })
+
+        //abort axios call on component unmount
+        return () => {controller.abort()}
+
+- test:
+
+        test('grand total starts at $0.00', async () => {
+        const {unmount} = render(<OrderEntry />)
+
+        const grandTotal = await screen.findByRole('heading', {name: /Grand total: \$/i})
+        expect(grandTotal).toHaveTextContent('0.00')
+
+        unmount()
+        })
