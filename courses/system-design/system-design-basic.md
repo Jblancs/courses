@@ -84,6 +84,7 @@ Elastic load balancing
 - as traffic goes up, load balancer will auto scale up
 
 If app is exposed from a website you already have, you can use DNS service such as Amazon Route 53 to direct traffic to load balancer
+- From Route 53, using an alias or "A" record traffic can be forwarded to load balancer
 
 ![alt text](image-5.png)
 
@@ -492,6 +493,8 @@ Which is an option which is automatically highly available
 - generally it is more desired to have a system highly available than be cost effective
 
 # Difference between High Availability vs. Fault Tolerance
+High Availability ensures system will keep serving traffic even if one availability zone goes down.
+
 What happens when 1 high availability zone goes down?
 - if 2 EC2 can handle 50 transactions per sec (TPS)
     - If one goes down then auto scaling group will spin another EC2 but during that time the performance will be reduced to 50 TPS
@@ -627,3 +630,111 @@ Amount of TIME app can be down during a disaster
 ![alt text](image-42.png)
 
 ## Disaster Recovery Strategies
+![alt text](image-43.png)
+
+### Strategy 1: Backup Restore (Highest RPO/RTO)
+- Only thing that is being replicated to another region is the backup
+- Can have longest RPO/RTO
+- On 2nd region, no instances, databases or load balancers are running
+    - In case of disaster, you will run infrastructure's code using this backup for database, EBS and amazon machine images
+- Cheapest option but takes longer because everything need to be provisioned from scratch
+
+![alt text](image-44.png)
+
+### Strategy 2: Pilot Light
+- This keeps bare minimum core infrastructure running in the disaster recovery region so that in case of disaster so that app can be brought up faster than Backup Restore strat
+- In this case, if core part of app is data the database is up and running
+- database is being replicated
+- Database replica and ECS2 are turned off
+- note that Load balancer and auto scaling groups are ready to go
+- In this case, data is replicated using Aurora's global database feature
+    - if interviewer you database that does not have this feature, you need to replicate it using some custom app, open source tools or product
+
+![alt text](image-45.png)
+
+### Strategy 3: Warm Standby
+- Involves that there is a scaled down but fully functional copy of production environment within another region
+- decreases time to recovery because there is a copy turned on in another region but it is not fully turned on
+    - In auto scaling group, only on server is running
+
+![alt text](image-46.png)
+
+### Strategy 4: Multi-site Active/Active
+Most Popular, Most Expensive
+- Another copy of whole app is running in another region
+
+![alt text](image-47.png)
+
+# CAP Theorem
+### C - Consistency
+- Every read receives the most recent write or an error
+### A - Availability
+- Every request receives a non error response, without the guarantee that it contains the most recent write
+### P - Partition Tolerance
+- **partition** - If connection between 2 node in a database is disconnected
+- The system continues to operate dispite an arbitrary number of messages being dropped (or delayed) by network between nodes
+
+Lets say we have 2 nodes in database
+- if something is written in node A, it is replicated to node B and vice versa
+- ex. store back account balance
+- This is consistent because the Read is giving most up to date value
+- This is available because every request is giving non error response
+- partition is running
+![alt text](image-48.png)
+
+### CAP theorem states that you can only achive 2 of the 3
+- Reality is that in any distributed system, you cannot ensure partition will always stay up and running
+![alt text](image-49.png)
+
+For AP
+
+Lets say connection is severed
+- Write request comes to update balance of 3
+- Read will read 2 still since connection is severed
+- This means system is only available and partition tolerant (can still write and read even if data isnt consistent)
+
+For CP
+
+- Dynamo DB has option called Strongly Consistent Read which returns error if node detects there is a disconnect leading to no availability
+- Partition means that it will give some sort of data back but does not guarantee it will be consistent data
+
+For AC
+- Not possible for distributed system
+- Theoretically, Relational databases do this (consistency is highly valued)
+    - You have primary node and data gets replicated to secondary nodes
+    - if connection is partitioned, it removes the node and stops sending any traffic to that node
+        - previously you can still read and write
+
+![alt text](image-50.png)
+
+### When should you choose what?
+Ex. Let say bank with ATMs, you deposit at an ATM
+- You go to other ATM but connection is severed and you tried to retrieve balance but it does not show last deposit
+- In this case banks would focus on consistency over availability since they would not want to display wrong balance to customer
+
+Ex. In social media, you post a pic and it gets liked
+- sometimes likes aren't updated right away
+- availability is more important that consistency
+
+Ex. Lets change ATMs to nodes in above image and for Facebook, it is more important that nodes keep solving the traffic
+- One option is to create redundant connections in between
+    - this becomes expensive since connections are actual fiber optic cables, not just software
+    - not realistically feasable
+- More practical way to resolve this
+    - Have one connection
+    - You could allow writes and have time stamps for each write on both nodes
+    - when connection is restored, system can reconcile based on timestamps and bring system to correct states
+    ![alt text](image-51.png)
+
+### Drawbacks of CAP Theorem
+- does not consider some factors such as scalability, latency and security
+
+If you build a retail app, Scalability is important
+- Someone says you can go with database that gives A or C but does not scale as much as NoSQL which gives CP or AP
+    - must do calculation of chances a partition can go down by looking at prev history of outages is less than 1% then go with scalable app
+
+### Some common interview questions are:
+- What is C - consistency (read receives most recent data or error)
+- What is A - availability (every request receives non error response even if data not updated)
+- What is P - partition tolerant (system continues to operate even if connection severed)
+- How can you achieve all of those? How can you achieve CP?
