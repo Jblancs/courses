@@ -541,6 +541,89 @@ In real world system design, tables need to scalable
     ![alt text](image-37.png)
 
 ## Challenges of Hashing
-Lets say a server goes down
+Lets say a server goes down or a new one is added
 - That ends up remapping entire system
-- this can be solved using consisten hashing
+- this can be solved using consistent hashing
+
+# Consistent Hashing
+### How does consistent hashing solve the re-map?
+Imagine we have a hash ring
+- With every incoming request, there is a request id which is used as input to hash function which generates number output
+- circle will be uniformly divided into those numbers (ex 0-99 would divide into 100 parts)
+- addition to hash function, consistent hashing involves performing a hash function on a unique id of the server
+    - Each server will have a unique ID
+- Once you have both hashes
+    - Ex. request can be assigned to server hash directly clockwise of request hash
+
+![alt text](image-38.png)
+
+### Advantages
+Lets say a server 0 gets removed
+- Only some requests will be remapped but all other requests will now be impacted
+    - Ex. request 2 on image
+    ![alt text](image-39.png)
+- uniformly distributes load of backend server
+- in case of disruption, there should minimum remapping and rerouting
+
+### How to solve problem of if 1 server getting too many requests?
+- Instead of adding more servers, run same server id through multiple hash algorithm
+    - That server will show up multiple times on hash ring
+    - this server is just a replica (NOT another VM)
+- If a specific server is bigger than others, then you can run more hash functions on that server since it can handle traffic
+
+**Practical Implementations**
+- load balancers
+- Used with backend database server
+
+# Database Sharding (Horizontal Partitioning)
+If traffic goes up for app, Load balancer and EC2 can scale up easily
+- if traffic exceeds capacity of database, there will be somr app disruption
+
+How can you scale database?
+- vertical scaling (not ideal)
+- Use database sharding
+
+### Database Sharding
+- Database architecture pattern where you separate one tables rolls into multiple different tables known as partitions or shards
+- Each partition has the same schema and column but different rows
+- Depending on id, app can divert traffic to different shards
+    - Uses hashing to assign which shard row should go to
+
+![alt text](image-40.png)
+
+**Advantages**
+- allows database to scale horizontally
+- faster query reponse times
+- limited blast radius during outage
+
+**Disadvantages**
+- Unbalanced shards over time making that specific shard have slower response time
+- mitigated by resharding but this is painful because it might change hash algorithm
+- implementing sharding logic is an overhead
+
+# Common Interview Question: How will you achieve Disaster Recovery?
+There are multiple approaches to DR:
+- Active-Active is NOT the only one (replicate database so everything will be running in 2 places)
+- Select strategy depending on RPO/RTO of application
+
+### RPO (Recovery Point Objective)
+The amount of DATA that is allowed to be lost during a disaster measured in time
+
+Example:
+- lets say you back up storage database every hour
+- if storage goes down at 59 mins 59 secs, you lose that data
+
+![alt text](image-41.png)
+
+How will you reduce RPO?
+- Take frequent backups
+
+How do you achieve real time RPO (no downtime)?
+- For storage you need real time replication
+- As soon as one region goes down, the second region data is already up to date
+
+### RTO (Recovery Time Objective)
+Amount of TIME app can be down during a disaster
+![alt text](image-42.png)
+
+## Disaster Recovery Strategies
