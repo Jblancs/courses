@@ -322,4 +322,458 @@ In interview ask: Should you do analytics when data in stream or after or does i
 Most important thing to remember is Data Lake holds massive amount of data
 - S3 is at the heart of a Data Lake as main storage service (scalable, cost effective, has tiers, can run queries, warehousing)
 
-# Performan Cost and Optimization
+# Performance Cost and Optimization
+How to tackle Challenges Faced Question
+- Asked can you tell me challenges you faced
+
+When Tackling any tuning/troubleshooting keep in mind:
+- Monitor
+    - Logs (app logs)
+    - metrics (shows utilization of infrastructure, how much cpu, memory used, is app throttling)
+    - traces (how much time each line of code takes)
+- Measure
+    - Define KPI (say if line of code takes more than 1 sec then its a problem)
+    - Send alarm
+- Remediate
+    - change configuration (higher EC2, move to GPU based EC2)
+    - chnge code (most time sensitive and costly)
+
+### EC2 Based App
+Backend of API and is not giving response or app is crashing
+
+Monitor
+- Logs
+- REASON: Metrics - Look at CPU/Memory Utilization on CloudWatch
+- Traces
+
+Measure
+- REASON: Define KPI - you see CPU utilization always high over 90% and threshold is 80%
+- Send alarms - cloudWatch alarm
+
+Remediate
+- Configuration - used home grown algorithm/comput optimizer to optimize EC2 capacity
+
+### 3 Tier Design
+- CloudWatch - used for logs and metrics
+- Tracing - AWS Xray
+- AWS Compute Optimizer determines optimal EC2
+- AWS Cost Explorer gives cost breakdown
+- CloudHealth gives summary of what you need to know
+- kubecost for containers
+
+![alt text](image-21.png)
+
+# Security: Authentication (log in) & Authorization
+Authentication - do you have access to app
+- Need user id and password to log in to an app
+
+Authorization - what can you do in an app after you have been authenticated
+- For AWS account, can you delete a database?
+
+Whiteboard:
+- User
+- IDP (Identity provider) - system where user ID and password are stored
+- Gateway or Load balancer
+
+Note: all modern apps are collection of microservices or APIs
+
+### How does flow work with security?
+![alt text](image-22.png)
+- As part of app, you have screen which will ask for user id and password
+- This is sent to IDP (not sent directly to API gateway)
+- in return IDP will give token (JWT token) if id and pw match
+- Then app calls API with user ID and JWT
+- Gateway reaches out to IDP and validates if token is valid
+    - Could have some sort of compute between gateway and IDP (ex. lambda)
+- Generally JWT has expiry and you can cache response for a period of time
+    - if same token is used, then can skip the step since response is cached
+
+# Security: Excryption at Rest & Client/Server Side Encryption
+Encryption Flow
+- You have confidential file
+- You use encryption key to run encryption algo
+- encrypts data
+![alt text](image-23.png)
+
+Can be done in 2 ways:
+- Client Side Encryption
+    - app running in EC2
+    - app maintains keys
+    - excrypts data and sends encrypted data to storage
+    ![alt text](image-24.png)
+
+- Server Side Encryption
+    - Send data securely using HTTPS
+    - data gets encrypted in storage
+    ![alt text](image-25.png)
+
+2 states of security
+- in transit (https)
+- in rest
+
+
+### Managing Key Yourself
+- keys need to be rotated periodically
+- make it harder to obtain key for intruders
+    - Encrypt key with another key (Enevelope Encryption)
+    - one key must remain in plaintext (master key stored in secure place) to decrypt keys and data
+    ![alt text](image-26.png)
+- Track and log keys usage to detect anomaly
+
+AWS KMS (Key Management System)
+- Fully manages keys
+- Centralized key management
+- Integration with AWS Service
+- Built in auditing
+- Secure and compliant
+![alt text](image-27.png)
+
+### Customer Master Key (CMK) can be customer managed or AWS managed
+![alt text](image-28.png)
+
+
+### Tinder Example
+![alt text](image-29.png)
+IAM role not only needs policy to access databases and storage but also needs policy to encrypt and decrypt data of KMS being used
+
+# Security in Transit
+Before security is applied, the insecure protocol is HTTP
+
+### HTTP (Hyper Text Transfer Protocol)
+- All info sent in clear text
+- vulnerable to attack
+- not used in real world systems
+
+### HTTPS (Hyper Text Transfer Protocol Secure)
+- All info is encrypted
+- uses 1 of 2 protocols
+    - SSL (Secure Socket Layer)
+    - TLS (Transport Layer Security)
+        - MTLS (Mutual TLS)
+    - TLS is faster, newer, and built on SSL
+
+### SSL/TLS Flow
+In interview, mention I will encrypt data in transit using HTTPS with TLS
+
+In Case they ask about detail (Unlikely)
+- client init connection to server to set up encrypted session
+- server responds with certificate/public key
+- Once client get public key, they go to certificate authority (CA) to compare certificate signature with CA in certificate database
+- client use that public key to encrypt new pre master key and sends to server
+- server uses its private key to decrypt pre-master key
+- client and server use pre-master key to compute shared secret key
+- client send encrypted test message using shared secret
+- server send message back encrypted shared secret
+- client verifies and actual comm begins
+![alt text](image-30.png)
+
+# Mutual TLS
+Flow:
+- Client validates the server certificate
+- Server also validates client certificate
+- Server also needs to validate using some sort of CA that server can access
+
+![alt text](image-31.png)
+
+For AWS, you would use AWS Certificate Manager
+![alt text](image-32.png)
+
+Where us Mutual TLS used?
+- MTLS is used for B2B
+- TLS is used for thin clients (web browsers)
+
+### TLS with API Gateway
+- Client MUST have HTTPS
+- By default, API Gateway will use AWS default certificate
+- Woth custom domain, you can bring in your own cert
+- by default traffic between API gateway and EC2 is HTTP
+    - BUT you can encrypt using HTTPS
+    - gateway creates an SSL cert for backend
+    - backend server needs to validate cert
+![alt text](image-33.png)
+
+For NLB (network load balancer)
+- By default, SSL/TLS is NOT terminated at NLB
+    - Terminate SSL/TLS with new feature
+- backend server need to validate cert is passthrough
+
+![alt text](image-34.png)
+
+For ALB (application load balancer)
+- ALB can accept either HTTP or HTTPS traffic from client
+- SSL/TLS will terminate at ALB
+    - backend traffic with AWS network
+
+![alt text](image-35.png)
+
+# IDS/IPS Intrusion Detection/Prevention System
+
+### IDS - Intrusion Detection System
+
+Typical App flow:
+- Traffic from Internet goes through firewall
+- IDS scans incoming traffic and alerts system if malicious traffic found
+    - scans L3-L7 traffic
+    - detects and sends alerts (although alert sent, malicious traffic still reaches app)
+- then traffic goes to app
+
+![alt text](image-36.png)
+
+Implementation of IDS
+- can be run in amazon EC2 (will not stop traffic)
+    - drawback is it introduces some latency since traffic is going through EC2
+    ![alt text](image-38.png)
+- Can also run IDS again directly on EC2 running app
+![alt text](image-39.png)
+
+
+### IPS - Intrusion Prevention System
+
+Same general flow
+- BUT IPS sits within traffic
+- sends alert and can also quarantine the traffic or delete the packets
+    - scans L3-L7 traffic
+    - detects and send alert
+    - PREVENTS malicious traffic from reaching app
+
+![alt text](image-37.png)
+
+Implementation of IPS
+- You have to put something to process in between to scan traffic
+
+![alt text](image-41.png)
+
+## IMPORTANT Interview Question: Why spend money and latency for IDS/IPS when i already have NACL/Security Group
+- NACL/Security Group only work on L3/L4 layer
+    - IDS/IPS work on L3-L7
+- Security Group does NOT have deny rules
+    - IPS has deny rules
+- NACL/Security GRoup does not have intelligence
+    - IDS/IPS has sophisticated rules that gets updated
+- IDS/IPS can introduce latency to the app
+    - implement based on apps (if traffic is internal and staying with AWS network then you do not need IDS/IPS)
+    - app may not have sensitive data
+
+# Twelve-Factor App
+- Codebase
+    - one codebase tracked in revision control, many deployes
+- Dependencies
+    - explicitly declare and isolate dependencies
+- Config
+    - Store config in the environment
+- Backing Services
+    - Treat backing services as attached resources
+- Build, release, run
+    - strictly separate build and run stages
+- Processes
+    - execute the app as one or more stateless processes
+- Port binding
+    - Export services via port binding
+- Concurrency
+    - scale out via process model
+- Disposability
+    - Maximize robustness with fast startup and graceful shutdown
+- Dev/Prod parity
+    - keep dev, staging and prod as similar as possible
+- Logs
+    - treat logs as event streams
+- Admin processes
+    - Run admin/management tasks as one off processes
+
+Twelve factor methodolgy used to make app scalable, portable, resilient, faster recovery from disaster and minimize time and cost
+
+## I. Codebase - one codebase tracked in revision control, many deploys
+- Dev used IDE (VsCode) to create app.py and deploy using kubernetes
+- check app program into source code repo (github)
+- CI kicks off and builds container image and saves into dockerHUB
+- CD kicks off and deploys container image into kubernetes cluster running in Amazon EKS
+![alt text](image-42.png)
+
+Codebase is a single repo
+- App1 can deploy into diff environments (Dev, Stage, Prod)
+- App2 must not be deployed in same repo
+- If they have common components between apps, create common library and include using dependency manager
+![alt text](image-43.png)
+
+### Objective: Code can be deployed to any environment without any changes
+- remove any env specific dependencies from code
+- achieve max portability
+
+## II. Dependencies (Explicitly declare and isolate dependencies)
+Explicitly declare dependencies
+- create requirements.txt if creating a flask app
+- dockerfile include pip install -r ./requirements.txt
+
+Isolate dependencies
+![alt text](image-44.png)
+
+## III. Config (store config in environment)
+If you have to make code portable, ensure anything dependent on environment needs to be taken out of code
+- need to extract all configurations outside of code and store in storage such as AWS secrets manager
+![alt text](image-46.png)
+
+## IV. Backing services (Treat backing services as attached resource)
+Any service that application consumes over the network as part of its normal operations
+- data stores (MySQL, CouchDB)
+- messaging or queuing system
+- etc.
+
+You have to make app in a way that you do not need to change code whether you run on prem or in the cloud
+- code on 12 factor app makes no distinction between local, prem services or cloud services
+
+## V. Build, release, run (strictly separate build and run stages)
+When you deploy code, each time you change code you should put this through CI/CD process
+- everytime you change code you check it in repo
+- this creates a id for commit
+- that should go through build process and should be deployed
+
+For containers and kubernetes, there is another step:
+- every time code is commited, container image is created in build with new tag
+- use tag to update deployment.yaml
+- updates container image line with new release tag
+
+### if you strictly use build, release, run it allows you to revert back to any release in case of error
+![alt text](image-47.png)
+
+## VI. Processes (Execute the app as one or more stateless processes)
+Process is the minimum deployable unit of your app
+- one microservice backend code is one process (ex. container image)
+- multiple microservices working together for a functionality will be multiple processes
+
+Processes should be stateless and share nothing
+- any data that needs to persist should be stored in a stateful backing service like a database
+- if you create a stateful container where you store data (as opposed to database), when container dies the data goes away
+    - this makes app hard to restart and scale because when horizontal scaling they don't have access to data that is local to other container
+
+## VII. Port Binding (execute services via port binding)
+Lets say you run flask app which is exposed to port 5000
+- To test you would type http://localhost:5000 but in actual app you should not be typing in the port
+- introduce service which will give url and user uses the url and service will using port binding forward the traffic to appropriate port on backend
+
+![alt text](image-48.png)
+
+- another app can also call this url
+
+## VIII. Concurrency (Scale out via process model)
+Till now we ensured all processes (microservice/minimum deployable unit of app) are portable
+- moved dependencies/config/database-location out of code
+- stateless
+- we'll move logging dependencies out of the code as well (Number XI)
+
+Scale processes using horizontal scaling
+
+## IX. Disposability (maximize robustness with fast startup and graceful shutdown)
+Processes are disposable, meaning they can be started or stopped at a moment's notice
+
+Graceful shutdown
+- stop accepting new requests
+- allow current requests to finish
+- exit
+
+In case graceful shutdown is not possible
+- return jobs to the queue
+
+## X. Dev/prod parity (keep development, staging and production as similar as possible)
+Pre DevOps/Containers era - substantial gap between dev and prod
+- Time gap - longer time to go to prod
+- Personnel gap - separation between dev and ops
+- Tools gap - different tools used in dev and prod
+
+### Utilize DevOps practices
+- continuous deployment
+- same tools in dev and prod
+    - containerization solves this
+    - use same backing service in dev and prod (cost efficient cloud services solves this)
+
+## XI. Logs (treat logs as event streams)
+Challenges when code sends logs directly to splunk
+- code needs to be changed between environments
+- code needs to be changed for logging backend
+- tightly coupled log integration
+    - both compute and logging platform need to scale at same rate
+
+![alt text](image-49.png)
+
+Solution: Move log forwarding capability from code and utilize fluentd
+- Even if you change backend, you just need to change config of fluentd
+
+![alt text](image-50.png)
+
+## XII. Admin processes (run admin/management tasks as one-off processes)
+At times, one off admin processes needed to be run
+- update database values
+- run one time scripts
+
+According to 12 factor apps, Admin processes should:
+- run in the identical environment of the app
+- use same codebase
+- ship with application
+    - create separate run, build, release with admin code
+- should produce logs
+
+Lets say you need to run script, you should not log into prod env and run commands of script
+- you SHOULD create a separate run, build, release
+- create script and merge into repo
+- test using the code base
+
+# 12 Factor App Interview Q/A
+
+### You do NOT need to remember
+- numbers-factors mapping
+- cryptic taglines
+- all the factors
+
+### Important Questions to know:
+- Why is twelve factor app important
+- Explain how twelve factor app makes your code portable or scalable
+- Explain three twelve factor app principles
+- Give me an example where you couldn't follow twelve factor app principle and why?
+
+# Cell Based Architecture
+Idea is based on a ship, where it is divided into water tight cells so that if there happens to be a breach the other compartments are not affected
+- This failure is isolated which is the fundamental of cell based architecture
+![alt text](image-51.png)
+
+### Parts of Cell based Architecture
+Cell Router
+- thinnest possible layer, with responsibility of routing requests to the right cell and only that
+
+Cell
+- complete workload, with everything needed to operate independently
+
+Control plane
+- responsible for admin tasks, such as provisioning cells, de-provisioning cells, and migrating cell customers
+
+Main Goal
+- failure containment and reduced blast radius
+
+![alt text](image-52.png)
+
+Issues with no cell based architecture
+- If cell goes down, all customers become unavailable
+
+![alt text](image-53.png)
+
+### Example of Cell Based Architecture
+In telecom, instead of putting all customers in 1 database you use multiple databases
+- ex. 1 database holds US-east, 1 US-west
+- same apps run on each
+- have global load balancer accepting traffic
+- user logs into account
+- there is a routing layer (middleware) which has a database containing mapping for which app to direct request to
+
+![alt text](image-54.png)
+
+Cell rebalancer tracks how many accounts are sent to each cell and can rebalance if too many are sent to one cell
+- rebalancer will update dynamoDB in routing layer and change how everything is dispersed
+
+In real world, this pattern is not popular
+- if need to update or add new tech, you would need to update each ECS
+
+How do you go about implementing Cell base Architecture in real world?
+- Define one cell as one region
+    - App should span across at least 2 availability zones
+    - results in app becoming more resilient
+
+### Popular Implementation
+![alt text](image-55.png)
